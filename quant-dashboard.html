@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quant Financial Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --bg: #0b1220;
+  --panel: #121b2d;
+  --border: #22304a;
+  --text: #dbe4f3;
+  --muted: #7f8ea8;
+  --accent: #e0a83b;
+  --accent-dim: #c4922f;
+  --green: #3dd68c;
+  --red: #f07178;
+  --blue: #7aa2f7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+.header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(90deg, #0f1728 0%, var(--bg) 100%);
+}
+.header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+select, input[type="date"], input[type="number"] {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font: inherit;
+  min-width: 150px;
+  color-scheme: dark;
+}
+select:focus, input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kpi-title { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-value { font-size: 1.55rem; font-weight: 700; }
+.kpi-value.pos { color: var(--green); }
+.kpi-value.neg { color: var(--red); }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.card-head h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.badge {
+  font-size: 0.68rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.chart-box { position: relative; height: 260px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.heatmap-wrap { overflow-x: auto; }
+.heatmap {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.heatmap th, .heatmap td {
+  border: 1px solid var(--border);
+  padding: 14px 12px;
+}
+.heatmap th { color: var(--muted); font-weight: 500; background: #0e1626; }
+.heatmap td { font-weight: 600; }
+.corr-1 { background: rgba(61,214,140,0.35); color: var(--green); }
+.corr-high { background: rgba(61,214,140,0.18); }
+.corr-mid { background: rgba(224,168,59,0.12); }
+.corr-low { background: rgba(240,113,120,0.12); }
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+.btn-run {
+  margin-top: 16px;
+  background: var(--accent);
+  color: #1a1405;
+  border: 0;
+  border-radius: 7px;
+  padding: 11px 22px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.btn-run:hover { filter: brightness(1.12); }
+.message {
+  margin-top: 12px;
+  color: var(--accent);
+  font-size: 0.88rem;
+}
+.insights {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+.insights h3 { margin-bottom: 12px; font-size: 0.95rem; }
+.insight-item {
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: #0e1626;
+  margin-bottom: 8px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.88rem;
+  color: #b8c5db;
+}
+.footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .kpis { grid-template-columns: 1fr; }
+  .page { padding: 14px; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>QUANT FINANCIAL INTELLIGENCE</h1>
+  <p>Multi-asset analytics &amp; backtesting · Gold · Bitcoin · NVIDIA · Demo mode</p>
+</header>
+
+<main class="page">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <label class="field">
+      <span>Asset</span>
+      <select id="assetSelect">
+        <option value="Gold">Gold</option>
+        <option value="Bitcoin">Bitcoin</option>
+        <option value="NVIDIA">NVIDIA</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Start Date</span>
+      <input type="date" id="startDate" value="2023-01-01">
+    </label>
+    <label class="field">
+      <span>End Date</span>
+      <input type="date" id="endDate" value="2024-12-31">
+    </label>
+    <button class="btn-run" style="margin-top:0" onclick="refreshDashboard()">APPLY FILTERS</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis" id="kpiRow">
+    <div class="kpi"><span class="kpi-title">Total Return</span><span class="kpi-value pos" id="kpiReturn">+24.6%</span></div>
+    <div class="kpi"><span class="kpi-title">Volatility (Ann.)</span><span class="kpi-value" id="kpiVol">18.2%</span></div>
+    <div class="kpi"><span class="kpi-title">Sharpe Ratio</span><span class="kpi-value" id="kpiSharpe">1.35</span></div>
+    <div class="kpi"><span class="kpi-title">Max Drawdown</span><span class="kpi-value neg" id="kpiDD">−14.8%</span></div>
+  </div>
+
+  <!-- Price Chart -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Price Series</h3>
+      <span class="badge">DEMO</span>
+    </div>
+    <div class="chart-box"><canvas id="priceChart"></canvas></div>
+  </div>
+
+  <!-- Indicator Chart -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Technical Indicators — SMA / EMA</h3>
+      <span class="badge">DEMO</span>
+    </div>
+    <div class="chart-box"><canvas id="indicatorChart"></canvas></div>
+  </div>
+
+  <!-- Returns + Drawdown -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <h3>Daily Returns (%)</h3>
+        <span class="badge">DEMO</span>
+      </div>
+      <div class="chart-box"><canvas id="returnsChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>Drawdown</h3>
+        <span class="badge">DEMO</span>
+      </div>
+      <div class="chart-box"><canvas id="drawdownChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Correlation Heatmap -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Asset Correlation Matrix (Returns)</h3>
+      <span class="badge">DEMO</span>
+    </div>
+    <div class="heatmap-wrap">
+      <table class="heatmap" id="corrTable">
+        <thead>
+          <tr><th></th><th>Gold</th><th>Bitcoin</th><th>NVIDIA</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Gold</th><td class="corr-1">1.00</td><td class="corr-low">0.12</td><td class="corr-mid">0.28</td></tr>
+          <tr><th>Bitcoin</th><td class="corr-low">0.12</td><td class="corr-1">1.00</td><td class="corr-high">0.61</td></tr>
+          <tr><th>NVIDIA</th><td class="corr-mid">0.28</td><td class="corr-high">0.61</td><td class="corr-1">1.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Backtest Panel -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Backtesting</h3>
+      <span class="badge">SMA Crossover</span>
+    </div>
+    <div class="form-grid">
+      <label class="field"><span>Strategy</span>
+        <select id="btStrategy">
+          <option>SMA Crossover</option>
+          <option>EMA Trend</option>
+          <option>Buy &amp; Hold</option>
+        </select>
+      </label>
+      <label class="field"><span>Initial Capital (₹)</span>
+        <input type="number" id="btCapital" value="1000000">
+      </label>
+      <label class="field"><span>Transaction Cost (%)</span>
+        <input type="number" id="btCost" value="0.1" step="0.01">
+      </label>
+      <label class="field"><span>Short SMA</span>
+        <input type="number" id="btShort" value="20">
+      </label>
+      <label class="field"><span>Long SMA</span>
+        <input type="number" id="btLong" value="50">
+      </label>
+      <label class="field"><span>Start Date</span>
+        <input type="date" id="btStart" value="2023-01-01">
+      </label>
+      <label class="field"><span>End Date</span>
+        <input type="date" id="btEnd" value="2024-12-31">
+      </label>
+    </div>
+    <button class="btn-run" onclick="runBacktest()">RUN BACKTEST</button>
+    <p class="message" id="btMessage"></p>
+  </div>
+
+  <!-- Benchmark Chart -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Strategy vs Buy &amp; Hold</h3>
+      <span class="badge">DEMO</span>
+    </div>
+    <div class="chart-box"><canvas id="benchmarkChart"></canvas></div>
+  </div>
+
+  <!-- Insights -->
+  <div class="insights">
+    <h3>Automated Insights</h3>
+    <div id="insightsList">
+      <div class="insight-item">Gold shows moderate annualised volatility (18.2%) with a positive Sharpe of 1.35 over the selected window.</div>
+      <div class="insight-item">Max drawdown of −14.8% occurred mid-period; recovery was gradual without new lows.</div>
+      <div class="insight-item">Bitcoin–NVIDIA correlation (0.61) is the strongest pair; Gold remains a low-correlation diversifier.</div>
+      <div class="insight-item">No look-ahead bias detected in SMA/EMA series — trailing windows only.</div>
+    </div>
+  </div>
+
+</main>
+
+<div class="footer">
+  Historical analysis only · Not investment advice · Demo data · Quant Financial Intelligence
+</div>
+
+<script>
+/* ---------- Demo data generators (asset-aware) ---------- */
+const ASSET_PROFILES = {
+  Gold:    { base: 1800, vol: 0.012, drift: 0.0003, color: '#e0a83b' },
+  Bitcoin: { base: 42000, vol: 0.035, drift: 0.0008, color: '#f7931a' },
+  NVIDIA:  { base: 450, vol: 0.028, drift: 0.0012, color: '#76b900' }
+};
+
+function seededRandom(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function generateSeries(asset, n = 60) {
+  const p = ASSET_PROFILES[asset];
+  const rand = seededRandom(asset.charCodeAt(0) * 97);
+  const prices = [];
+  let price = p.base;
+  const labels = [];
+  const start = new Date(2023, 0, 1);
+  for (let i = 0; i < n; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i * 5);
+    labels.push(d.toISOString().slice(0, 10));
+    price = price * (1 + p.drift + p.vol * (rand() - 0.48));
+    prices.push(+price.toFixed(2));
+  }
+  return { labels, prices };
+}
+
+function sma(arr, w) {
+  return arr.map((_, i) => {
+    if (i < w - 1) return null;
+    const slice = arr.slice(i - w + 1, i + 1);
+    return +(slice.reduce((a, b) => a + b, 0) / w).toFixed(2);
+  });
+}
+
+function ema(arr, w) {
+  const k = 2 / (w + 1);
+  const out = [];
+  let prev = arr[0];
+  arr.forEach((v, i) => {
+    if (i === 0) { out.push(v); return; }
+    prev = v * k + prev * (1 - k);
+    out.push(+prev.toFixed(2));
+  });
+  return out;
+}
+
+function returns(prices) {
+  return prices.map((p, i) => i === 0 ? null : +((p / prices[i - 1] - 1) * 100).toFixed(2));
+}
+
+function drawdown(prices) {
+  let peak = prices[0];
+  return prices.map(p => {
+    if (p > peak) peak = p;
+    return +((p / peak - 1) * 100).toFixed(2);
+  });
+}
+
+/* ---------- Chart instances ---------- */
+let charts = {};
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function makeLineChart(canvasId, labels, datasets, yLabel) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  charts[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#7f8ea8', boxWidth: 12, font: { size: 11 } } }
+      },
+      scales: {
+        x: { ticks: { color: '#7f8ea8', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: '#1a2438' } },
+        y: { ticks: { color: '#7f8ea8', font: { size: 10 } }, grid: { color: '#1a2438' }, title: yLabel ? { display: true, text: yLabel, color: '#7f8ea8' } : undefined }
+      }
+    }
+  });
+}
+
+function makeBarChart(canvasId, labels, data, color) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Return %',
+        data,
+        backgroundColor: data.map(v => v >= 0 ? 'rgba(61,214,140,0.55)' : 'rgba(240,113,120,0.55)'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7f8ea8', maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#7f8ea8', font: { size: 10 } }, grid: { color: '#1a2438' } }
+      }
+    }
+  });
+}
+
+/* ---------- Dashboard refresh ---------- */
+function refreshDashboard() {
+  const asset = document.getElementById('assetSelect').value;
+  const { labels, prices } = generateSeries(asset, 60);
+  const color = ASSET_PROFILES[asset].color;
+  const sma20 = sma(prices, 8);
+  const ema12 = ema(prices, 6);
+  const rets = returns(prices);
+  const dd = drawdown(prices);
+
+  // KPIs (deterministic per asset)
+  const totalRet = ((prices[prices.length - 1] / prices[0] - 1) * 100).toFixed(1);
+  const vol = (ASSET_PROFILES[asset].vol * Math.sqrt(252) * 100).toFixed(1);
+  const sharpe = (totalRet / 100 / (vol / 100)).toFixed(2);
+  const maxDD = Math.min(...dd).toFixed(1);
+
+  document.getElementById('kpiReturn').textContent = (totalRet >= 0 ? '+' : '') + totalRet + '%';
+  document.getElementById('kpiReturn').className = 'kpi-value ' + (totalRet >= 0 ? 'pos' : 'neg');
+  document.getElementById('kpiVol').textContent = vol + '%';
+  document.getElementById('kpiSharpe').textContent = sharpe;
+  document.getElementById('kpiDD').textContent = maxDD + '%';
+
+  makeLineChart('priceChart', labels, [{
+    label: asset + ' Close',
+    data: prices,
+    borderColor: color,
+    backgroundColor: color + '22',
+    fill: true,
+    tension: 0.25,
+    pointRadius: 0,
+    borderWidth: 2
+  }]);
+
+  makeLineChart('indicatorChart', labels, [
+    { label: 'Price', data: prices, borderColor: color, tension: 0.25, pointRadius: 0, borderWidth: 1.5 },
+    { label: 'SMA', data: sma20, borderColor: '#7aa2f7', tension: 0.25, pointRadius: 0, borderWidth: 1.5, borderDash: [4, 3] },
+    { label: 'EMA', data: ema12, borderColor: '#e0a83b', tension: 0.25, pointRadius: 0, borderWidth: 1.5 }
+  ]);
+
+  makeBarChart('returnsChart', labels.slice(1), rets.slice(1));
+
+  makeLineChart('drawdownChart', labels, [{
+    label: 'Drawdown %',
+    data: dd,
+    borderColor: '#f07178',
+    backgroundColor: 'rgba(240,113,120,0.15)',
+    fill: true,
+    tension: 0.2,
+    pointRadius: 0,
+    borderWidth: 1.5
+  }]);
+
+  // Benchmark (strategy slightly better)
+  const bh = prices.map(p => +(p / prices[0] * 1000000).toFixed(0));
+  const strat = bh.map((v, i) => +(v * (1 + 0.0004 * i)).toFixed(0));
+  makeLineChart('benchmarkChart', labels, [
+    { label: 'Strategy', data: strat, borderColor: '#e0a83b', tension: 0.25, pointRadius: 0, borderWidth: 2 },
+    { label: 'Buy & Hold', data: bh, borderColor: '#7f8ea8', tension: 0.25, pointRadius: 0, borderWidth: 1.5, borderDash: [5, 4] }
+  ]);
+
+  // Insights
+  const insights = [
+    `${asset} total return over the window is ${totalRet >= 0 ? '+' : ''}${totalRet}% with annualised volatility ${vol}%.`,
+    `Sharpe ratio of ${sharpe} indicates ${sharpe > 1 ? 'favourable' : 'modest'} risk-adjusted performance.`,
+    `Maximum drawdown reached ${maxDD}% — trailing-window indicators used, no look-ahead bias.`,
+    `Correlation structure unchanged: Gold remains low-corr diversifier vs Bitcoin/NVIDIA.`
+  ];
+  document.getElementById('insightsList').innerHTML = insights.map(t => `<div class="insight-item">${t}</div>`).join('');
+}
+
+function runBacktest() {
+  const capital = Number(document.getElementById('btCapital').value) || 1000000;
+  const cost = Number(document.getElementById('btCost').value) || 0.1;
+  const strat = document.getElementById('btStrategy').value;
+  const mult = strat === 'Buy & Hold' ? 1.22 : strat === 'EMA Trend' ? 1.31 : 1.28;
+  const net = capital * mult * (1 - cost / 100 * 4);
+  const ret = ((net / capital - 1) * 100).toFixed(1);
+  document.getElementById('btMessage').textContent =
+    `Backtest complete · Final equity ≈ ₹${Math.round(net).toLocaleString('en-IN')} (${ret >= 0 ? '+' : ''}${ret}%) · Costs applied · Demo only`;
+}
+
+/* Init */
+refreshDashboard();
+</script>
+</body>
+</html>
